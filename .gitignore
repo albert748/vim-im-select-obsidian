@@ -18,3 +18,7 @@ main.js
 
 # obsidian
 data.json
+
+# 本 fork：构建产物与部署样板入库（重装/换机后可直接取用，见 deploy/README.md）
+!main.js
+!deploy/data.json

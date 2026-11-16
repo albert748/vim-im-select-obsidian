@@ -1,0 +1,9 @@
+{
+  "defaultIM": "true",
+  "obtainCmd": "printf false",
+  "switchCmd": "gdbus call --session --dest org.fcitx.Fcitx5 --object-path /rime --method org.fcitx.Fcitx.Rime1.SetAsciiMode {im}",
+  "insertIM": "false",
+  "windowsDefaultIM": "1033",
+  "windowsObtainCmd": "D:\\sync\\default\\Apps\\im-select2.exe",
+  "windowsSwitchCmd": "D:\\sync\\default\\Apps\\im-select2.exe {im}"
+}
