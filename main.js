@@ -130,49 +130,58 @@ var VimImPlugin = class extends import_obsidian.Plugin {
     const base = typeof adapter.getBasePath === "function" ? adapter.getBasePath() : adapter.basePath;
     return cmd.split("{pluginDir}").join(`${base}/.obsidian/plugins/${this.manifest.id}`);
   }
+  /** 执行命令并取回 stdout（Promise 化 —— 「先读状态、再切换」必须串行）。 */
+  execCapture(cmd) {
+    return new Promise((resolve) => {
+      require("child_process").exec(cmd, (error, stdout) => {
+        if (error) {
+          console.error(`obtain error: ${error}`);
+          resolve("");
+          return;
+        }
+        resolve((stdout || "").trim());
+      });
+    });
+  }
+  /** 执行命令，只关心成功/失败。 */
+  execFire(cmd) {
+    return new Promise((resolve) => {
+      require("child_process").exec(cmd, (error) => {
+        if (error) {
+          console.error(`switch error: ${error}`);
+        } else {
+          console.debug(`switch im: ${cmd}`);
+        }
+        resolve();
+      });
+    });
+  }
   async switchToInsert() {
-    const { exec } = require("child_process");
     let switchToInsert;
     if (this.currentInsertIM) {
       switchToInsert = this.resolveCmd(this.isWinPlatform ? this.settings.windowsSwitchCmd.replace(/{im}/, this.currentInsertIM) : this.settings.switchCmd.replace(/{im}/, this.currentInsertIM));
     }
     console.debug("change to insert");
     if (typeof switchToInsert != "undefined" && switchToInsert) {
-      exec(switchToInsert, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`switch error: ${error}`);
-          return;
-        }
-        console.debug(`switch im: ${switchToInsert}`);
-      });
+      await this.execFire(switchToInsert);
     }
     this.previousMode = "insert";
   }
   async switchToNormal() {
-    const { exec } = require("child_process");
     console.debug("change to noInsert");
     if (this.previousMode != "normal") {
       const obtainc = this.resolveCmd(this.isWinPlatform ? this.settings.windowsObtainCmd : this.settings.obtainCmd);
-      if (typeof obtainc != "undefined" && obtainc) {
-        exec(obtainc, (error, stdout, stderr) => {
-          if (error) {
-            console.error(`obtain error: ${error}`);
-            return;
-          }
-          this.currentInsertIM = stdout;
-          console.debug(`obtain im: ${this.currentInsertIM}`);
-        });
+      if (obtainc) {
+        const captured = await this.execCapture(obtainc);
+        if (captured) {
+          this.currentInsertIM = captured;
+        }
+        console.debug(`obtain im: ${this.currentInsertIM}`);
       }
     }
     const switchFromInsert = this.resolveCmd(this.isWinPlatform ? this.settings.windowsSwitchCmd.replace(/{im}/, this.settings.windowsDefaultIM) : this.settings.switchCmd.replace(/{im}/, this.settings.defaultIM));
-    if (typeof switchFromInsert != "undefined" && switchFromInsert) {
-      exec(switchFromInsert, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`switch error: ${error}`);
-          return;
-        }
-        console.debug(`switch im: ${switchFromInsert}`);
-      });
+    if (switchFromInsert) {
+      await this.execFire(switchFromInsert);
     }
     this.previousMode = "normal";
   }
