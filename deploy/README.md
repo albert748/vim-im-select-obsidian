@@ -36,6 +36,12 @@ flatpak override --user --talk-name=org.fcitx.Fcitx5 md.obsidian.Obsidian
 
 `windows*` 三项保留给 Windows 端（vault 跨机同步时那边仍走 `im-select.exe`）。
 
+## 构建环境（换机复现要点）
+
+- Node 22 / npm 12 实测可用。
+- `npm install` 会看到 `esbuild@0.19.10 (postinstall: node install.js)` 被 npm 的 allowScripts 拦下 —— **不影响构建**：esbuild 的真实二进制来自 optional dependency `@esbuild/linux-x64/bin/esbuild`（约 9.6 MB），不依赖 postinstall。只有撞到 "You installed esbuild for another platform" 一类报错时才需要 `npm install-scripts approve esbuild`。
+- 构建验证：`npm run build && ls -l main.js`（约 9.7 KB）。
+
 ## 部署
 
 ```bash
