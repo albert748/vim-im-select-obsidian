@@ -117,11 +117,24 @@ var VimImPlugin = class extends import_obsidian.Plugin {
     var _a, _b, _c;
     return (_c = (_b = (_a = view.sourceMode) == null ? void 0 : _a.cmEditor) == null ? void 0 : _b.cm) == null ? void 0 : _c.cm;
   }
+  /**
+   * `{pluginDir}` 让命令引用**随插件一起分发**的文件（如仓库内的 im-select2.exe），
+   * 不必在每台机器上写死绝对路径 —— 插件目录跟着 vault 走。
+   * 需要含空格的路径时在 data.json 里自己加引号：`"{pluginDir}/im-select2.exe" {im}`。
+   */
+  resolveCmd(cmd) {
+    if (!cmd || cmd.indexOf("{pluginDir}") < 0) {
+      return cmd;
+    }
+    const adapter = this.app.vault.adapter;
+    const base = typeof adapter.getBasePath === "function" ? adapter.getBasePath() : adapter.basePath;
+    return cmd.split("{pluginDir}").join(`${base}/.obsidian/plugins/${this.manifest.id}`);
+  }
   async switchToInsert() {
     const { exec } = require("child_process");
     let switchToInsert;
     if (this.currentInsertIM) {
-      switchToInsert = this.isWinPlatform ? this.settings.windowsSwitchCmd.replace(/{im}/, this.currentInsertIM) : this.settings.switchCmd.replace(/{im}/, this.currentInsertIM);
+      switchToInsert = this.resolveCmd(this.isWinPlatform ? this.settings.windowsSwitchCmd.replace(/{im}/, this.currentInsertIM) : this.settings.switchCmd.replace(/{im}/, this.currentInsertIM));
     }
     console.debug("change to insert");
     if (typeof switchToInsert != "undefined" && switchToInsert) {
@@ -139,7 +152,7 @@ var VimImPlugin = class extends import_obsidian.Plugin {
     const { exec } = require("child_process");
     console.debug("change to noInsert");
     if (this.previousMode != "normal") {
-      const obtainc = this.isWinPlatform ? this.settings.windowsObtainCmd : this.settings.obtainCmd;
+      const obtainc = this.resolveCmd(this.isWinPlatform ? this.settings.windowsObtainCmd : this.settings.obtainCmd);
       if (typeof obtainc != "undefined" && obtainc) {
         exec(obtainc, (error, stdout, stderr) => {
           if (error) {
@@ -151,7 +164,7 @@ var VimImPlugin = class extends import_obsidian.Plugin {
         });
       }
     }
-    const switchFromInsert = this.isWinPlatform ? this.settings.windowsSwitchCmd.replace(/{im}/, this.settings.windowsDefaultIM) : this.settings.switchCmd.replace(/{im}/, this.settings.defaultIM);
+    const switchFromInsert = this.resolveCmd(this.isWinPlatform ? this.settings.windowsSwitchCmd.replace(/{im}/, this.settings.windowsDefaultIM) : this.settings.switchCmd.replace(/{im}/, this.settings.defaultIM));
     if (typeof switchFromInsert != "undefined" && switchFromInsert) {
       exec(switchFromInsert, (error, stdout, stderr) => {
         if (error) {
